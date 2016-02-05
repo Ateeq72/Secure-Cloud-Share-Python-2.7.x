@@ -8,7 +8,7 @@ import encrypt_handler
 
 import cherrypy
 from cherrypy.lib.static import serve_file
-from auth import AuthController, require, member_of, name_is
+from auth_logic import AuthController, require, member_of, name_is
 
 
 header = """<html><title>Secure Cloud Group Share</title>
@@ -41,9 +41,8 @@ def check_login():
             </head>
             <div data-role="page" data-theme="a">
             <div data-role="header" data-position="inline">
-             <h2> <a href='/'>Welcome to Secure Cloud</a></h2>
-             </div>
-            <h4>Welcome %s <a href=/auth/logout>Logout</a></h4>
+             <h2> Welcome to Secure Cloud</h2></div>
+            <h4>Welcome %s <a href=logout>Logout</a></h4>
             <body align="center"> 
             <div data-role="content" data-theme="a">
             <div class="wrapper">""" % str(cherrypy.session['cur_user'])
@@ -58,7 +57,7 @@ def check_login():
             <div data-role="page" data-theme="a">
             <div data-role="header" data-position="inline">
              <h2> Welcome to Secure Cloud</h2></div>
-            </head><h4>Welcome Guest <a href='/'>Login</a></h4></div>
+            </head><h4>Welcome Guest <a href=/>Login</a></h4></div>
             <body align="center">  
             <div data-role="content" data-theme="a">
             <div class="wrapper">""" 
@@ -89,7 +88,27 @@ class Root:
         'tools.auth.on': True
     }
     
-    auth = AuthController()  
+    auth = AuthController()
+    
+    @cherrypy.expose
+    @require()
+    def download_view(self, directory="static/download"):
+        html = check_login()
+        html += """<h2>Here are the files in the selected directory:</h2>
+        <h3><a href="/upload_view"> Upload Files </a></h3>
+        <table><tr><th>Files Available</th></tr>
+        <a href="download_view?directory=%s"> Parent Directory [..] </a></br></br>       
+        """ % os.path.dirname(os.path.abspath(directory))
+
+        for filename in glob.glob(directory + '/*'):
+            absPath = os.path.abspath(filename)
+            if os.path.isdir(absPath):
+                html += '<tr><td><a href="/download_view?directory=' + absPath + '">' + os.path.basename(filename) + "/[Dir]</a> </tr></td>"
+            else:
+                html += '<tr><td><a href="/download/download_view/?filepath=' + absPath + '">' + os.path.basename(filename) + "</a> </tr></td>"
+
+        html += """ </table><br></div></body></html>"""
+        return html    
     
     
     @cherrypy.expose  
@@ -98,35 +117,48 @@ class Root:
         html = check_login()
         html += """      
             <h2>Upload a file</h2>
-            <form action="/upload_file" method="post" enctype="multipart/form-data">
+            <form action="upload_file" method="post" enctype="multipart/form-data">
             filename: <input type="file" name="theFile" /><br />
-            <input type="submit" value="Upload" />
+            <input type="submit" />
             </form>
             <h2>Download a file</h2>
-            <a href='/'>Go to Downloads</a>            
-        """
-        html += footer
-        return html          
+            <a href='download_view'>Go to Downloads</a>
+            </div>
+        </body></html>
+        """    
+        return html    
+    
+
+    @cherrypy.expose
+    def logout(self):
+        header = """<html><title>Secure Cloud Group Share</title>
+        <link rel="stylesheet" href="/static/themes/downloaded_style.css" type="text/css" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />      
+        </head>
+        <body align="center">   
+        <div class="wrapper">  """
+        cherrypy.session['cur_user'] = ""
+        header += "<h2>Logged Out</h2><br><h3><a href=/>Click to Continue</a>"
+        header += footer
+        return header
+        
 
 
-    @cherrypy.expose  
+    @cherrypy.expose
     @require()
-    def index(self, directory="/static/download"):
-        html = check_login()
-        html += """<h2>Here are the files in the selected directory:</h2>
-        <h3><a href="/upload_view"> Upload Files </a></h3>
-        <table><tr><th>Files Available</th></tr>
-        <a href="/?directory=%s"> Parent Directory [..] </a></br></br>       
-        """ % os.path.dirname(os.path.abspath(directory))
-
-        for filename in glob.glob(directory + '/*'):
-            absPath = os.path.abspath(filename)
-            if os.path.isdir(absPath):
-                html += '<tr><td><a href="/?directory=' + absPath + '">' + os.path.basename(filename) + "/[Dir]</a> </tr></td>"
-            else:
-                html += '<tr><td><a href="/?filepath=' + absPath + '">' + os.path.basename(filename) + "</a> </tr></td>"
-
-        html += """ </table><br></div></body></html>"""
+    def index(self):
+        html = header
+        html += """              
+            <table>
+            <form method="post" action="validate">
+            <tr><td>Login : </td><td><input type="text" name="uname"/></td></tr>
+            <tr><td>Password : </td><td><input type="password" name="upasswd"/></td></tr>
+            <tr><td></td><td><input type="submit" value="login"></td><td></td><tr>
+            </table>
+            <h3><a href=register>Register!</a></h3>
+            <h3><a href=remove>Remove!</a></h3>
+            """
+        html += footer
         return html
         
     @cherrypy.expose
@@ -135,8 +167,8 @@ class Root:
         page += """   
         <h2> Register</h2><br>
         <form method="post" action="getdata">
-        <input type="text" name="uname" required="required"/>
-        <input type="password" name="upasswd" required="required"/>
+        <input type="text" name="uname"/>
+        <input type="password" name="upasswd"/>
         <input type="hidden" value="add" name="action"/>
         <input type="submit" value="Register">
         </form></div></body></html>"""
@@ -168,8 +200,20 @@ class Root:
            html = header
            html += """ <h1>Status : %s </h1> """ % (adduser)   
         html += "<h3><a href=/>Click to continue</a></h3></div></body></html>"
-        return html 
-   
+        return html
+        
+    @cherrypy.expose
+    def validate(self,uname,upasswd):
+        place = header
+        ency_pass = encrypt_handler.for_encrypt_pass(upasswd)
+        if auth_logic.check_credentials(uname,ency_pass) == None:
+            cherrypy.session['cur_user'] = uname
+            place += """ <h2><a href=/download_view> logged in</a></div>"""
+            raise cherrypy.HTTPRedirect('/download_view')          
+        else:   
+            cherrypy.session['cur_user'] = ""
+            place += "<h2>Status : Failed</h2><br><h3><a href=/>Retry</a></h3></div></body></>"
+        return  place
         
 
     @cherrypy.expose
@@ -205,9 +249,13 @@ class Root:
         # the NamedTemporaryFile, used by our version of cgi.FieldStorage,
         # explicitly deletes the original filename
         theFile = formFields['theFile']
-        os.link(theFile.file.name, '/static/download/'+theFile.filename)
+        os.link(theFile.file.name, 'static/download/'+theFile.filename)
         
         return "ok, got it filename='%s'" % theFile.filename        
+   
+class Download:
+    
+    auth = AuthController()
      
     @cherrypy.expose
     @require()
@@ -219,5 +267,6 @@ class Root:
 tutconf = os.path.join(os.path.dirname(__file__), 'tutorial.conf')
 if __name__ == '__main__':
     root = Root()
+    root.download = Download()
     cherrypy.quickstart(root, config=tutconf)
  

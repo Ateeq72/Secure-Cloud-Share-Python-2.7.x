@@ -1,0 +1,70 @@
+import cherrypy
+import os
+from auth import AuthController, require, member_of, name_is
+
+class RestrictedArea:
+    
+    # all methods in this controller (and subcontrollers) is
+    # open only to members of the admin group
+    
+    _cp_config = {
+        'auth.require': [member_of('admin')]
+    }
+    
+    @cherrypy.expose
+    def index(self):
+        return """This is the admin only area."""
+
+
+class Root:
+    header = """<html><title>Secure Cloud Group Share</title>
+        <link rel="stylesheet" href="/static/themes/ateeq.min.css" />
+        <link rel="stylesheet" href="/static/themes/ateeq.css" />
+	<link rel="stylesheet" href="/static/themes/jquery.mobile.icons.min.css" />
+        <link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile.structure-1.4.5.min.css" />
+        <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+        <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+       
+        </head>
+        <div data-role="page" data-theme="a">
+        <div data-role="header" data-position="inline">
+             <h2> Welcome to Secure Cloud</h2></div>
+        <body align="center"> 
+        <div data-role="content" data-theme="a">
+        <div class="wrapper">""" 
+        
+    footer = """</div></div></body></html> """
+    
+    _cp_config = {
+        'tools.sessions.on': True,
+        'tools.auth.on': True
+    }
+    
+    auth = AuthController()
+    
+    restricted = RestrictedArea()
+    
+    @cherrypy.expose
+    @require()
+    def index(self):
+        return """This page only requires a valid login."""
+    
+    @cherrypy.expose
+    def open(self):
+        return """This page is open to everyone"""
+    
+    @cherrypy.expose
+    @require(name_is("joe"))
+    def only_for_joe(self):
+        return """Hello Joe - this page is available to you only"""
+
+    # This is only available if the user name is joe _and_ he's in group admin
+    @cherrypy.expose
+    @require(name_is("joe"))
+    @require(member_of("admin"))   # equivalent: @require(name_is("joe"), member_of("admin"))
+    def only_for_joe_admin(self):
+        return """Hello Joe Admin - this page is available to you only"""
+
+tutconf = os.path.join(os.path.dirname(__file__), 'tutorial.conf')
+if __name__ == '__main__':
+    cherrypy.quickstart(Root(), config=tutconf)
