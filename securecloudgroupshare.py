@@ -111,7 +111,7 @@ class Root:
 
     @cherrypy.expose  
     @require()
-    def index(self, directory="/static/download"):
+    def index(self, directory="static/download"):
         html = check_login()
         html += """<h2>Here are the files in the selected directory:</h2>
         <h3><a href="/upload_view"> Upload Files </a></h3>
@@ -124,7 +124,7 @@ class Root:
             if os.path.isdir(absPath):
                 html += '<tr><td><a href="/?directory=' + absPath + '">' + os.path.basename(filename) + "/[Dir]</a> </tr></td>"
             else:
-                html += '<tr><td><a href="/?filepath=' + absPath + '">' + os.path.basename(filename) + "</a> </tr></td>"
+                html += '<tr><td><a href="/index_download?filepath=' + absPath + '">' + os.path.basename(filename) + "</a> </tr></td>"
 
         html += """ </table><br></div></body></html>"""
         return html
@@ -211,13 +211,19 @@ class Root:
      
     @cherrypy.expose
     @require()
-    def download_view(self, filepath):        
-        return serve_file(filepath, "application/x-download", "attachment")     
+    def index_download(self, filepath): 
+        html = check_login()
+        html += """<h2> What do you wanna do with the file?</h2> <br> 
+        <table><tr><tr><a href=/>Download</a>"""
+        html += footer
+        return html
+    
+    #serve_file(filepath, "application/x-download", "attachment")     
   
 
 
 tutconf = os.path.join(os.path.dirname(__file__), 'tutorial.conf')
 if __name__ == '__main__':
     root = Root()
-    cherrypy.quickstart(root, config=tutconf)
+    cherrypy.quickstart(root, config=tutconf)    
  
