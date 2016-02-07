@@ -237,7 +237,7 @@ class Root:
           <table><tr><td><a href=/download_file?filepath=%s>Download</a></td>
           <tr><td><a href=/>Share</a></td><tr><br>""" % (file,response,filepath)
         else:
-            html += """ <h2> You are Authorized to do anything with the file! Sorry :( REsponse = %s """ % response
+            html += """ <h2> You are not the uploader!. <br> Hence, you are <b>not</b> authorized to do anything with the file! Sorry :( <br> Response = %s """ % response
         html += footer
         return html
     
