@@ -153,11 +153,11 @@ class Root:
         <h2> Remove</h2><br>
         <form method="post" action="getdata">
         Name : <input type="text" name="uname"/><br>
-        <input type="hidden" value="remove" name="action"/><br>
-        Password : <input type="hidden" value="" name="upasswd"/><br>
+        Password : <input type="password" value="" name="upasswd"/><br>
         Email : <input type="email" name="email" required="required"/><br>
         Phone No. : <input type="number" name="phno" required="required"/><br>
         Age : <input type="number" name="age" required="required"/><br>
+        <input type="hidden" value="remove" name="action"/>
         <input type="submit" value="Remove">
         </form></div></body></html>"""
         return page
@@ -177,13 +177,12 @@ class Root:
            html += """ <h1>Status : %s <br> %s  </h1> """ % (adduser,unregister)
         html += "<h3><a href=/>Click to continue</a></h3></div></body></html>"
         return html 
-   
-        
 
-    @cherrypy.expose
+
     @cherrypy.tools.noBodyProcess()
+    @cherrypy.expose
     @require()
-    def upload_file(self, theFile=None):                 
+    def upload_file(self, theFile=None):
         """upload action
         
         We use our variation of cgi.FieldStorage to parse the MIME
@@ -215,6 +214,7 @@ class Root:
         theFile = formFields['theFile']
         user = cherrypy.session['cur_user']
         file = theFile.filename
+        theFile.file.write()
 
         try:
           out = db_handler.file_upload(user,file)

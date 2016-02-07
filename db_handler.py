@@ -35,6 +35,7 @@ def unregister(email,phone,age):
     cur.execute('create table if not exists registered_user(email varchar(255),phone varchar(255), age varchar(255))')
     if cur.execute('delete from registered_user where email= "%s" and phone = "%s" and age= "%s"' % (email,phone,age)):
         db.commit()
+        db.close()
         return "Done"
     else:
         return "Failed"
@@ -50,6 +51,7 @@ def remove_user(user):
     cur = db.cursor()
     if cur.execute("delete from users where username='%s'" % (user)):
         db.commit()
+        db.close()
         status = "Success"
         return status
     else:
@@ -77,6 +79,7 @@ def file_upload(user,file):
     else:
         cur.execute('insert into file_upload (user,file) values("%s","%s")' % (user,file))
         db.commit()
+        db.close()
         return 'Upload Successfull'
 
 def file_download(user,file):
@@ -98,6 +101,7 @@ def file_share(user,file,aggre_key,group):
     else:
         cur.execute('insert into file_share (user,file,aggre_key,group) values ("%s","%s","%s","%s")' % (user,file,aggre_key,group))
         db.commit()
+        db.close()
         return "Share Added"
 
 def file_share_download(user,file,aggre_key,group):
@@ -115,6 +119,7 @@ def add_key_share(key):
     cur.execute('create table if not exists keys_for_share(key varchar(255)')
     if cur.execute('insert into keys_for_share values("%s")' % (key)):
         db.commit()
+        db.close()
         return "Done"
     else:
         return "Failed"
