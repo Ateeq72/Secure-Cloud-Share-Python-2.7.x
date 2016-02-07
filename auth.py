@@ -13,10 +13,10 @@ SESSION_KEY = '_cp_username'
 header = """<html><title>Secure Cloud Group Share</title>
         <link rel="stylesheet" href="/static/themes/ateeq.min.css" />
         <link rel="stylesheet" href="/static/themes/ateeq.css" />
-	<link rel="stylesheet" href="/static/themes/jquery.mobile.icons.min.css" />
-        <link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile.structure-1.4.5.min.css" />
-        <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
-        <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>       
+	    <link rel="stylesheet" href="/static/themes/jquery.mobile.icons.min.css" />
+        <link rel="stylesheet" href="/static/themes/jquery.mobile.structure-1.4.5.min.css" />
+        <script src="/static/themes/jquery-1.11.1.min.js"></script>
+        <script src="/static/themes/jquery.mobile-1.4.5.min.js"></script>
         </head>
         <div data-role="page" data-theme="a">
         <div data-role="header" data-position="inline">
@@ -34,12 +34,20 @@ def check_credentials(username, password):
     # Adapt to your needs
     users = db_handler.get_users()
     ency_pass = encrypt_handler.for_encrypt_pass(password)
-    print users , ency_pass
-    for u, p in users.iteritems():        
-      if username == u and ency_pass == p:    
+    p = users.get(username)
+    if p == None:
+        return u"User Doest not Exist!"
+    elif ency_pass != p:
+        return u"Incorrect password!"
+    else:
         return None
-      else:
-        return u"Incorrect username or password."
+
+    # for u, p in users.items():
+    #   if username == u and ency_pass == p:
+    #     print users , username, ency_pass
+    #     return None
+    #   else:
+    #     return u"Incorrect username or password."
     
     # An example implementation which uses an ORM could be:
     # u = User.get(username)
@@ -141,7 +149,6 @@ class AuthController(object):
             Password: <input type="password" name="password" /><br />
             <input type="submit" value="Log in" />
             <h3><a href=/register>Register!</a></h3>
-            <h3><a href=/remove>Remove!</a></h3>
             </body></html>""" % locals()
         html += footer
         return html      

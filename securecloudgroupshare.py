@@ -14,10 +14,10 @@ from auth import AuthController, require, member_of, name_is
 header = """<html><title>Secure Cloud Group Share</title>
         <link rel="stylesheet" href="/static/themes/ateeq.min.css" />
         <link rel="stylesheet" href="/static/themes/ateeq.css" />
-	<link rel="stylesheet" href="/static/themes/jquery.mobile.icons.min.css" />
-        <link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile.structure-1.4.5.min.css" />
-        <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
-        <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+	    <link rel="stylesheet" href="/static/themes/jquery.mobile.icons.min.css" />
+        <link rel="stylesheet" href="/static/themes/jquery.mobile.structure-1.4.5.min.css" />
+        <script src="/static/themes/jquery-1.11.1.min.js"></script>
+        <script src="/static/themes/jquery.mobile-1.4.5.min.js"></script>
        
         </head>
         <div data-role="page" data-theme="a">
@@ -34,16 +34,16 @@ def check_login():
             header = """<html><title>Secure Cloud Group Share</title>
             <link rel="stylesheet" href="/static/themes/ateeq.min.css" />
             <link rel="stylesheet" href="/static/themes/ateeq.css" />
-	    <link rel="stylesheet" href="/static/themes/jquery.mobile.icons.min.css" />
-            <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
-            <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+	        <link rel="stylesheet" href="/static/themes/jquery.mobile.icons.min.css" />
+            <script src="/static/themes/jquery-1.11.1.min.js"></script>
+            <script src="/static/themes/jquery.mobile-1.4.5.min.js"></script>
             <meta name="viewport" content="width=device-width, initial-scale=1" />      
             </head>
             <div data-role="page" data-theme="a">
             <div data-role="header" data-position="inline">
              <h2> <a href='/'>Welcome to Secure Cloud</a></h2>
              </div>
-            <h4>Welcome %s <a href=/auth/logout>Logout</a></h4>
+            <h4>Welcome %s <a href=/auth/logout>Logout</a>  <a href=/remove>Delete Account</a></h4>
             <body align="center"> 
             <div data-role="content" data-theme="a">
             <div class="wrapper">""" % str(cherrypy.session['cur_user'])
@@ -51,7 +51,7 @@ def check_login():
             header = """<html><title>Secure Cloud Group Share</title>
             <link rel="stylesheet" href="/static/themes/ateeq.min.css" />
             <link rel="stylesheet" href="/static/themes/ateeq.css" />
-	    <link rel="stylesheet" href="/static/themes/jquery.mobile.icons.min.css" />
+	        <link rel="stylesheet" href="/static/themes/jquery.mobile.icons.min.css" />
             <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
             <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
             <meta name="viewport" content="width=device-width, initial-scale=1" />   
@@ -116,7 +116,7 @@ class Root:
         html += """<h2>Here are the files in the selected directory:</h2>
         <h3><a href="/upload_view"> Upload Files </a></h3>
         <table><tr><th>Files Available</th></tr>
-        <a href="/?directory=%s"> Parent Directory [..] </a></br></br>       
+        <a href="/?directory=%s"> Parent Directory [..] </a></br></br>
         """ % os.path.dirname(os.path.abspath(directory))
 
         for filename in glob.glob(directory + '/*'):
@@ -135,8 +135,11 @@ class Root:
         page += """   
         <h2> Register</h2><br>
         <form method="post" action="getdata">
-        <input type="text" name="uname" required="required"/>
-        <input type="password" name="upasswd" required="required"/>
+        Name : <input type="text" name="uname" required="required"/><br>
+        Password : <input type="password" name="upasswd" required="required"/><br>
+        Email : <input type="email" name="email" required="required"/><br>
+        Phone No. : <input type="number" name="phno" required="required"/><br>
+        Age : <input type="number" name="age" required="required"/><br>
         <input type="hidden" value="add" name="action"/>
         <input type="submit" value="Register">
         </form></div></body></html>"""
@@ -149,24 +152,29 @@ class Root:
         page += """   
         <h2> Remove</h2><br>
         <form method="post" action="getdata">
-        <input type="text" name="uname"/>
-        <input type="hidden" value="remove" name="action"/>        
-        <input type="hidden" value="" name="upasswd"/>
+        Name : <input type="text" name="uname"/><br>
+        <input type="hidden" value="remove" name="action"/><br>
+        Password : <input type="hidden" value="" name="upasswd"/><br>
+        Email : <input type="email" name="email" required="required"/><br>
+        Phone No. : <input type="number" name="phno" required="required"/><br>
+        Age : <input type="number" name="age" required="required"/><br>
         <input type="submit" value="Remove">
         </form></div></body></html>"""
         return page
         
     @cherrypy.expose    
-    def getdata(self,uname,upasswd,action):
+    def getdata(self,uname,upasswd,action,email,phno,age):
         if action == "add":
            e_pass = encrypt_handler.for_encrypt_pass(upasswd)
            adduser = db_handler.add_user(uname,e_pass)
+           register = db_handler.register(email,phno,age)
            html = header
-           html += """ <h1>Status : %s </h1> """ % (adduser)  
+           html += """ <h1>Status : %s <br> %s </h1> """ % (adduser,register)
         elif action == "remove":
            adduser = db_handler.remove_user(uname)
+           unregister = db_handler.unregister(email,phno,age)
            html = header
-           html += """ <h1>Status : %s </h1> """ % (adduser)   
+           html += """ <h1>Status : %s <br> %s  </h1> """ % (adduser,unregister)
         html += "<h3><a href=/>Click to continue</a></h3></div></body></html>"
         return html 
    
@@ -205,23 +213,39 @@ class Root:
         # the NamedTemporaryFile, used by our version of cgi.FieldStorage,
         # explicitly deletes the original filename
         theFile = formFields['theFile']
-        os.link(theFile.file.name, '/static/download/'+theFile.filename)
+        user = cherrypy.session['cur_user']
+        file = theFile.filename
+
+        try:
+          out = db_handler.file_upload(user,file)
+          os.link(theFile.file.name, 'static/download/'+theFile.filename)
+        except OSError,e:
+          return 'error occured : %s, %s' % (e, out)
         
-        return "ok, got it filename='%s'" % theFile.filename        
+        return "ok, got it filename='%s' ,  %s" % (theFile.filename, out)
      
     @cherrypy.expose
     @require()
-    def index_download(self, filepath): 
+    def index_download(self, filepath):
+        user = cherrypy.session['cur_user']
+        file = os.path.basename(filepath)
         html = check_login()
-        html += """<h2> What do you wanna do with the file?</h2> <br> 
-        <table><tr><tr><a href=/>Download</a>"""
+        response = db_handler.file_download(user,file)
+        if response:
+          html += """<h2> What do you wanna do with the file?</h2> <br>
+          <h3> %s </h3><br> Response : %s
+          <table><tr><td><a href=/download_file?filepath=%s>Download</a></td>
+          <tr><td><a href=/>Share</a></td><tr><br>""" % (file,response,filepath)
+        else:
+            html += """ <h2> You are Authorized to do anything with the file! Sorry :( REsponse = %s """ % response
         html += footer
         return html
     
-    #serve_file(filepath, "application/x-download", "attachment")     
-  
-
-
+    @cherrypy.expose
+    @require()
+    def download_file(self,filepath):
+        return serve_file(filepath, "application/x-download", "attachment")  
+    
 tutconf = os.path.join(os.path.dirname(__file__), 'tutorial.conf')
 if __name__ == '__main__':
     root = Root()
