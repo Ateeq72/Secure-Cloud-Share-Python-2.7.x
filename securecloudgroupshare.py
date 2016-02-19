@@ -4,84 +4,56 @@ import cgi
 import tempfile
 import db_handler
 import encrypt_handler
+import commands
 
 
 import cherrypy
 from cherrypy.lib.static import serve_file
 from auth import AuthController, require, member_of, name_is
 
+groups = 5
 
 header = """<html><title>Secure Cloud Group Share</title>
-        <link rel="stylesheet" href="/static/themes/ateeq.min.css" />
-        <link rel="stylesheet" href="/static/themes/ateeq.css" />
-	    <link rel="stylesheet" href="/static/themes/jquery.mobile.icons.min.css" />
-        <link rel="stylesheet" href="/static/themes/jquery.mobile.structure-1.4.5.min.css" />
-        <script src="/static/themes/jquery-1.11.1.min.js"></script>
-        <script src="/static/themes/jquery.mobile-1.4.5.min.js"></script>
-       
+        <head>
+        <link rel="stylesheet" href="/static/themes/downloaded_style.css" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
         </head>
-        <div data-role="page" data-theme="a">
-        <div data-role="header" data-position="inline">
-             <h2> Welcome to Secure Cloud</h2></div>
-        <body align="center"> 
-        <div data-role="content" data-theme="a">
-        <div class="wrapper">""" 
-        
-footer = """</div></div></body></html> """
-        
+             <h2><a href=/> Welcome to Secure Cloud</h2></a></div>
+        <body align="center">
+        <div class="wrapper">"""
+
+footer = """</div></body></html> """
+
 def check_login():
         if cherrypy.session['cur_user'] != "":
             header = """<html><title>Secure Cloud Group Share</title>
-            <link rel="stylesheet" href="/static/themes/ateeq.min.css" />
-            <link rel="stylesheet" href="/static/themes/ateeq.css" />
-	        <link rel="stylesheet" href="/static/themes/jquery.mobile.icons.min.css" />
-            <script src="/static/themes/jquery-1.11.1.min.js"></script>
-            <script src="/static/themes/jquery.mobile-1.4.5.min.js"></script>
-            <meta name="viewport" content="width=device-width, initial-scale=1" />      
-            </head>
-            <div data-role="page" data-theme="a">
-            <div data-role="header" data-position="inline">
-             <h2> <a href='/'>Welcome to Secure Cloud</a></h2>
-             </div>
-            <h4>Welcome %s <a href=/auth/logout>Logout</a>  <a href=/remove>Delete Account</a></h4>
-            <body align="center"> 
-            <div data-role="content" data-theme="a">
-            <div class="wrapper">""" % str(cherrypy.session['cur_user'])
+        <head>
+        <link rel="stylesheet" href="/static/themes/downloaded_style.css" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+        </head>
+             <h2> <a href=/>Welcome to Secure Cloud</a></h2>
+             <h4>Welcome %s Your Group : %s<br><a href=/auth/logout>Logout</a>  <a href=/remove>Delete Account</a></h4>
+            <body align="center">
+             <div class="wrapper">
+            """ % (str(cherrypy.session['cur_user']),str(cherrypy.session['group']))
         else:
             header = """<html><title>Secure Cloud Group Share</title>
-            <link rel="stylesheet" href="/static/themes/ateeq.min.css" />
-            <link rel="stylesheet" href="/static/themes/ateeq.css" />
-	        <link rel="stylesheet" href="/static/themes/jquery.mobile.icons.min.css" />
-            <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
-            <script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
-            <meta name="viewport" content="width=device-width, initial-scale=1" />   
-            <div data-role="page" data-theme="a">
-            <div data-role="header" data-position="inline">
-             <h2> Welcome to Secure Cloud</h2></div>
-            </head><h4>Welcome Guest <a href='/'>Login</a></h4></div>
-            <body align="center">  
-            <div data-role="content" data-theme="a">
-            <div class="wrapper">""" 
+        <head>
+        <link rel="stylesheet" href="/static/themes/downloaded_style.css" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+        </head>
+             <h2><a href=/> Welcome to Secure Cloud</a></h2>
+             <h4>Welcome Guest <br><a href=/auth/login>Login</a> </h4>
+            <body align="center">
+             <div class="wrapper">"""
         return header
+class NamedPart(cherrypy._cpreqbody.Part):
 
-
-class myFieldStorage(cgi.FieldStorage):
-    """Our version uses a named temporary file instead of the default
-    non-named file; keeping it visibile (named), allows us to create a
-    2nd link after the upload is done, thus avoiding the overhead of
-    making a copy to the destination filename."""
-    
-    def make_file(self, binary=None):
+    def make_file(self):
         return tempfile.NamedTemporaryFile()
-    
-def noBodyProcess():
-    """Sets cherrypy.request.process_request_body = False, giving
-    us direct control of the file upload destination. By default
-    cherrypy loads it to memory, we are directing it to disk."""
-    cherrypy.request.process_request_body = False
 
-cherrypy.tools.noBodyProcess = cherrypy.Tool('before_request_body', noBodyProcess)
-    
+cherrypy._cpreqbody.Entity.part_class = NamedPart
+
 class Root: 
     
     _cp_config = {
@@ -98,9 +70,9 @@ class Root:
         html = check_login()
         html += """      
             <h2>Upload a file</h2>
-            <form action="/upload_file" method="post" enctype="multipart/form-data">
-            filename: <input type="file" name="theFile" /><br />
-            <input type="submit" value="Upload" />
+            <form action='/upload_file' method='post' enctype='multipart/form-data'>
+            File: <input type='file' name='videoFile'/> <br/>
+            <input type='submit' value='Upload'/>
             </form>
             <h2>Download a file</h2>
             <a href='/'>Go to Downloads</a>            
@@ -140,6 +112,10 @@ class Root:
         Email : <input type="email" name="email" required="required"/><br>
         Phone No. : <input type="number" name="phno" required="required"/><br>
         Age : <input type="number" name="age" required="required"/><br>
+        Group : <select name="group">   """
+        for x in range(1,groups+1):
+            page += """ <option value=" """ + str(x) + """" >""" + str(x) + """ </option>"""
+        page +="""</select><br>
         <input type="hidden" value="add" name="action"/>
         <input type="submit" value="Register">
         </form></div></body></html>"""
@@ -148,7 +124,7 @@ class Root:
     @cherrypy.expose
     @require()
     def remove(self):
-        page = header
+        page = check_login()
         page += """   
         <h2> Remove</h2><br>
         <form method="post" action="getdata">
@@ -163,67 +139,46 @@ class Root:
         return page
         
     @cherrypy.expose    
-    def getdata(self,uname,upasswd,action,email,phno,age):
+    def getdata(self,uname,upasswd,action,email,phno,age,group):
         if action == "add":
            e_pass = encrypt_handler.for_encrypt_pass(upasswd)
            adduser = db_handler.add_user(uname,e_pass)
            register = db_handler.register(email,phno,age)
+           group_info = db_handler.insert_to_group(uname,group)
            html = header
-           html += """ <h1>Status : %s <br> %s </h1> """ % (adduser,register)
+           html += """ <h1>Status : %s <br> %s <br> %s</h1> """ % (adduser,register,group_info)
         elif action == "remove":
            adduser = db_handler.remove_user(uname)
            unregister = db_handler.unregister(email,phno,age)
+           remove_f_group = db_handler.delete_from_group(uname,group)
            html = header
-           html += """ <h1>Status : %s <br> %s  </h1> """ % (adduser,unregister)
+           html += """ <h1>Status : %s <br> %s <br> %s  </h1> """ % (adduser,unregister,remove_f_group)
         html += "<h3><a href=/>Click to continue</a></h3></div></body></html>"
-        return html 
+        return html
 
-
-    @cherrypy.tools.noBodyProcess()
-    @cherrypy.expose
     @require()
-    def upload_file(self, theFile=None):
-        """upload action
-        
-        We use our variation of cgi.FieldStorage to parse the MIME
-        encoded HTML form data containing the file."""
-        
-        # the file transfer can take a long time; by default cherrypy
-        # limits responses to 300s; we increase it to 1h
-        cherrypy.response.timeout = 3600
-        
-        # convert the header keys to lower case
-        lcHDRS = {}
-        for key, val in cherrypy.request.headers.iteritems():
-            lcHDRS[key.lower()] = val
-        
-        # at this point we could limit the upload on content-length...
-        # incomingBytes = int(lcHDRS['content-length'])
-        
-        # create our version of cgi.FieldStorage to parse the MIME encoded
-        # form data where the file is contained
-        formFields = myFieldStorage(fp=cherrypy.request.rfile,
-                                    headers=lcHDRS,
-                                    environ={'REQUEST_METHOD':'POST'},
-                                    keep_blank_values=True)
-        
-        # we now create a 2nd link to the file, using the submitted
-        # filename; if we renamed, there would be a failure because
-        # the NamedTemporaryFile, used by our version of cgi.FieldStorage,
-        # explicitly deletes the original filename
-        theFile = formFields['theFile']
-        user = cherrypy.session['cur_user']
-        file = theFile.filename
-        theFile.file.write()
+    @cherrypy.config(**{'response.timeout': 3600}) # default is 300s
+    @cherrypy.expose()
+    def upload_file(self, videoFile):
+       html = check_login()
+       assert isinstance(videoFile, cherrypy._cpreqbody.Part)
+       user = cherrypy.session['cur_user']
+       file = videoFile.filename
+       destination = os.path.join('/home/aristocrat/NetBeansProjects/SecureCloudGroupShare/static/download/', videoFile.filename)
+       try:
 
-        try:
+       # Note that original link will be deleted by tempfile.NamedTemporaryFile
+          os.link(videoFile.file.name, destination)
           out = db_handler.file_upload(user,file)
-          os.link(theFile.file.name, 'static/download/'+theFile.filename)
-        except OSError,e:
-          return 'error occured : %s, %s' % (e, out)
-        
-        return "ok, got it filename='%s' ,  %s" % (theFile.filename, out)
-     
+       except OSError,e:
+           html += 'error occured : %s ' % (e)
+           html += footer
+           return html
+       html += "ok, got it filename='%s' ,  %s" % (videoFile.filename, out)
+       html += footer
+       return html
+
+
     @cherrypy.expose
     @require()
     def index_download(self, filepath):
@@ -235,12 +190,52 @@ class Root:
           html += """<h2> What do you wanna do with the file?</h2> <br>
           <h3> %s </h3><br> Response : %s
           <table><tr><td><a href=/download_file?filepath=%s>Download</a></td>
-          <tr><td><a href=/>Share</a></td><tr><br>""" % (file,response,filepath)
+          <tr><td><a href=/delete_file?file=%s>Delete</a></td></tr>
+          <tr><td><a href=/share?file=%s>Share</a></td><tr>
+          <br>""" % (file,response,filepath,filepath,filepath)
         else:
             html += """ <h2> You are not the uploader!. <br> Hence, you are <b>not</b> authorized to do anything with the file! Sorry :( <br> Response = %s """ % response
         html += footer
         return html
-    
+
+    @cherrypy.expose
+    @require()
+    def delete_file(self,file):
+        html = check_login()
+        user = cherrypy.session['cur_user']
+        file_name= os.path.basename(file)
+        if commands.getoutput('rm -rf %s' % file) == '' and not os.path.isfile(file):
+            if db_handler.file_remove(user,file_name):
+                html += "<h2> File was deleted and ownership was removed! :)</h2>"
+            else:
+                html += "<h2> Something went wrong during DB handling! :(</h2>"
+        else:
+          html += "<h2> Something went wrong during Command execution! :(</h2>"
+        html += "<h3><a href=/>Go Back!</a></h3>"
+        html += footer
+        return html
+
+    @cherrypy.expose
+    @require()
+    def share(self,file):
+        file_name = os.path.basename(file)
+        user = cherrypy.session['cur_user']
+        group = cherrypy.session['group']
+        html = check_login()
+        key, key_str = encrypt_handler.get_aggre_key(group)
+        out = db_handler.file_share(user,file_name,key,group)
+        html += """ <h2> File : %s </h2>""" % file_name
+        html += """ Select the Group you wanna share the file with <br>
+         <form method="post" action=/share_file >
+         Group : <select name="group">"""
+        for x in range(1,groups+1):
+            html += """ <option value=" """ + str(x) + """ " > """ + str(x) + """ </option>"""
+        html +="""</select><br> <input type=submit value="Share"></form>"""
+        html += footer
+        return html
+
+
+
     @cherrypy.expose
     @require()
     def download_file(self,filepath):
@@ -249,5 +244,4 @@ class Root:
 tutconf = os.path.join(os.path.dirname(__file__), 'tutorial.conf')
 if __name__ == '__main__':
     root = Root()
-    cherrypy.quickstart(root, config=tutconf)    
- 
+    cherrypy.quickstart(root, config=tutconf)

@@ -11,21 +11,13 @@ import db_handler
 SESSION_KEY = '_cp_username'
 
 header = """<html><title>Secure Cloud Group Share</title>
-        <link rel="stylesheet" href="/static/themes/ateeq.min.css" />
-        <link rel="stylesheet" href="/static/themes/ateeq.css" />
-	    <link rel="stylesheet" href="/static/themes/jquery.mobile.icons.min.css" />
-        <link rel="stylesheet" href="/static/themes/jquery.mobile.structure-1.4.5.min.css" />
-        <script src="/static/themes/jquery-1.11.1.min.js"></script>
-        <script src="/static/themes/jquery.mobile-1.4.5.min.js"></script>
+        <link rel="stylesheet" href="/static/themes/downloaded_style.css" />
         </head>
-        <div data-role="page" data-theme="a">
-        <div data-role="header" data-position="inline">
-             <h2> Welcome to Secure Cloud</h2></div>
-        <body align="center"> 
-        <div data-role="content" data-theme="a">
-        <div class="wrapper">""" 
-        
-footer = """</div></div></body></html> """
+        <h2> Welcome to Secure Cloud</h2></div>
+        <body align="center">
+        <div class="wrapper">"""
+
+footer = """</body></html> """
 
 
 def check_credentials(username, password):
@@ -130,14 +122,16 @@ def all_of(*conditions):
 
 class AuthController(object):
     
-    def on_login(self, username):
+    def on_login(self, username,group):
         """Called on successful login"""
         cherrypy.session['cur_user'] = username
-        
+        cherrypy.session['group'] = group
+
     
     def on_logout(self, username):
         """Called on logout"""
         cherrypy.session['cur_user'] = ""
+        cherrypy.session['group'] = ""
     
     def get_loginform(self, username, msg="Enter login information", from_page="/"):
         html = header
@@ -163,7 +157,9 @@ class AuthController(object):
             return self.get_loginform(username, error_msg, from_page)
         else:
             cherrypy.session[SESSION_KEY] = cherrypy.request.login = username
-            self.on_login(username)
+            groups = db_handler.find_group(username)
+            group = groups.get(username)
+            self.on_login(username,group)
             raise cherrypy.HTTPRedirect(from_page or "/")
     
     @cherrypy.expose

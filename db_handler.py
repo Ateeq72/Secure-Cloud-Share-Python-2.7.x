@@ -1,4 +1,5 @@
 import MySQLdb as mysqldb
+import encrypt_handler
 
 def connect_logic():     
     return mysqldb.connect("localhost","root","laka","securecloud") 
@@ -82,6 +83,51 @@ def file_upload(user,file):
         db.close()
         return 'Upload Successfull'
 
+def file_remove(user,file):
+    db = connect_logic()
+    cur = db.cursor()
+    cur.execute('create table if not exists file_upload(user varchar(255),file varchar(255))')
+    if cur.execute('select * from file_upload where file = "%s"' % (file)) != 0L:
+        cur.execute('delete from file_upload where user="%s" and file="%s"' % (user,file))
+        db.commit()
+        db.close()
+        return True
+    else:
+        return False
+
+def find_group(user):
+    db = connect_logic()
+    cur = db.cursor()
+    cur.execute('create table if not exists group_(user_ varchar(255),group_ varchar(255))')
+    if cur.execute('select * from group_ where user_="%s"' % (user)) != 0L:
+        return dict(cur.fetchall())
+    else:
+        return None
+
+def insert_to_group(user,group):
+    db = connect_logic()
+    cur = db.cursor()
+    cur.execute('create table if not exists group_(user_ varchar(255), group_ varchar(255))')
+    if cur.execute('select * from group_ where user_="%s" and group_="%s"' % (user,group)) == 0L:
+        cur.execute('insert into group_ (user_,group_) values ("%s","%s")' % (user,group))
+        db.commit()
+        db.close()
+        return "Added to Group : %s" % group
+    else:
+        return "Failed! :("
+
+def delete_from_group(user,group):
+    db = connect_logic()
+    cur = db.cursor()
+    cur.execute('create table if not exists group_(user_ varchar(255), group_ varchar(255))')
+    if cur.execute('select * from group_ where user_="%s" and group_="%s"' % (user,group)) != 0L:
+        cur.execute('delete from group_ where user_="%s" and group_="%s"' % (user,group))
+        db.commit()
+        db.close()
+        return "Removed from Group : %s" % group
+    else:
+        return "Failed! :("
+
 def file_download(user,file):
     db = connect_logic()
     cur = db.cursor()
@@ -113,7 +159,7 @@ def file_share_download(user,file,aggre_key,group):
     else:
         return False
 
-def add_key_share(key):
+def add_key_share(user,key,group):
     db = connect_logic()
     cur = db.cursor()
     cur.execute('create table if not exists keys_for_share(key varchar(255)')
