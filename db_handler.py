@@ -128,6 +128,15 @@ def delete_from_group(user,group):
     else:
         return "Failed! :("
 
+def share_to_group(group):
+    db = connect_logic()
+    cur = db.cursor()
+    if cur.execute('select * from group_ where group_="%s"' % group) != 0L:
+        return dict(cur.fetchall())
+    else:
+        return "No users Found!"
+
+
 def file_download(user,file):
     db = connect_logic()
     cur = db.cursor()
@@ -142,7 +151,7 @@ def file_share(user,file,aggre_key,group):
     db = connect_logic()
     cur = db.cursor()
     cur.execute('create table if not exists file_share(user varchar(255),file varchar(255),aggre_key var(255),group varchar(255)')
-    if cur.execute('select * from file_share where user = "%s" and file = "%s" and aggre_key = "%s" and group = "%s"' % (user,file,aggre_key,group)) != 0L :
+    if cur.execute('select * from file_share where user = "%s" and file = "%s" and group = "%s"' % (user,file,group)) != 0L :
         return "Share Exists!"
     else:
         cur.execute('insert into file_share (user,file,aggre_key,group) values ("%s","%s","%s","%s")' % (user,file,aggre_key,group))

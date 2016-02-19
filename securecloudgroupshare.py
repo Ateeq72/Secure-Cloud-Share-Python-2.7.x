@@ -222,8 +222,9 @@ class Root:
         user = cherrypy.session['cur_user']
         group = cherrypy.session['group']
         html = check_login()
-        key, key_str = encrypt_handler.get_aggre_key(group)
-        out = db_handler.file_share(user,file_name,key,group)
+        aggre_keys = encrypt_handler.get_aggre_key(group)
+        print aggre_keys
+        #out = db_handler.file_share(user,file_name,key,group)
         html += """ <h2> File : %s </h2>""" % file_name
         html += """ Select the Group you wanna share the file with <br>
          <form method="post" action=/share_file >

@@ -8,10 +8,14 @@ def for_encrypt_pass(passwd):
 
 def get_aggre_key(group):
     rstring = binascii.b2a_hex(os.urandom(15))
-    users = db_handler.get_users()
+    users = db_handler.share_to_group(group)
     enc_group = for_encrypt_pass(group)
-    for u, p in users.iteritems():
-        return dict(u.join(rstring).join(enc_group).join(p)), rstring
+    a = {}
+    a.setdefault(rstring,[])
+    for u,g in users.iteritems():
+        a[rstring].append(u+rstring+enc_group)
+        return a
+
 
 
 
