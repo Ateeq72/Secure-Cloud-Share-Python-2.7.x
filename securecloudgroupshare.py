@@ -5,6 +5,7 @@ import tempfile
 import db_handler
 import encrypt_handler
 import commands
+import send_mail
 
 
 import cherrypy
@@ -32,7 +33,7 @@ def check_login():
           <meta name="viewport" content="width=device-width, initial-scale=1" />
         </head>
              <h2> <a href=/>Welcome to Secure Cloud</a></h2>
-             <h4>Welcome %s Your Group : %s<br><a href=/auth/logout>Logout</a>  <a href=/remove>Delete Account</a></h4>
+             <h4>Welcome %s, Your Group : %s<br><a href=/auth/logout>Logout</a>  <a href=/remove>Delete Account</a></h4>
             <body align="center">
              <div class="wrapper">
             """ % (str(cherrypy.session['cur_user']),str(cherrypy.session['group']))
@@ -143,13 +144,13 @@ class Root:
         if action == "add":
            e_pass = encrypt_handler.for_encrypt_pass(upasswd)
            adduser = db_handler.add_user(uname,e_pass)
-           register = db_handler.register(email,phno,age)
+           register = db_handler.register(uname,email,phno,age,group)
            group_info = db_handler.insert_to_group(uname,group)
            html = header
            html += """ <h1>Status : %s <br> %s <br> %s</h1> """ % (adduser,register,group_info)
         elif action == "remove":
            adduser = db_handler.remove_user(uname)
-           unregister = db_handler.unregister(email,phno,age)
+           unregister = db_handler.unregister(uname,email,phno,age)
            remove_f_group = db_handler.delete_from_group(uname,group)
            html = header
            html += """ <h1>Status : %s <br> %s <br> %s  </h1> """ % (adduser,unregister,remove_f_group)
@@ -228,6 +229,7 @@ class Root:
         html += """ <h2> File : %s </h2>""" % file_name
         html += """ Select the Group you wanna share the file with <br>
          <form method="post" action=/share_file >
+         <input type="hidden" value=" """  + file +""" " name="file">
          Group : <select name="group">"""
         for x in range(1,groups+1):
             html += """ <option value=" """ + str(x) + """ " > """ + str(x) + """ </option>"""
@@ -235,6 +237,34 @@ class Root:
         html += footer
         return html
 
+    @cherrypy.expose
+    @require()
+    def share_file(self, group, file):
+        html = check_login()
+        file_name = os.path.basename(file)
+        user = cherrypy.session['cur_user']
+        uemail = [db_handler.fetch_member_email(group)]
+        keys = encrypt_handler.get_aggre_key(group)
+        u = {}
+        i= int()
+        for k in keys.values() , u in uemail, i in range(0, len(keys.values())):
+           out = db_handler.file_share(u.keys(),file_name,k[i],group)
+        skey = keys.keys()
+        msg = " %s shared %s with you! key = %s " % (user,file_name,skey)
+        for u in uemail:
+           try:
+            if u.keys() in user:
+                pass
+            else:
+                send_mail.send_email(u.values(),msg)
+                html += """ File Shared \n Result : %s """ % out
+           except:
+               html += """ File Sharing Failed \n Result : %s """ % out
+        u={}
+        i=int()
+        keys={}
+        html += footer
+        return html
 
 
     @cherrypy.expose
