@@ -143,14 +143,14 @@ def file_download(user,file):
     else:
         return True
 
-def file_share(user,file,aggre_key,group):
+def file_share(users,file,aggre_key,group):
     db = connect_logic()
     cur = db.cursor()
     cur.execute('create table if not exists file_share (user varchar(255),file varchar(255),aggre_key varchar(350),group_ varchar(255))')
-    if cur.execute('select * from file_share where user = "%s" and file = "%s" and group_ = %s' % (user,file,group)) != 0L :
+    if cur.execute('select * from file_share where user = "%s" and file = "%s" and group_ = %s' % (users,file,group)) != 0L :
         return "Share Exists!"
     else:
-        cur.execute('insert into file_share (user,file,aggre_key,group_) values ("%s","%s","%s","%s")' % (user,file,aggre_key,group))
+        cur.execute('insert into file_share (user,file,aggre_key,group_) values ("%s","%s","%s","%s")' % (users,file,aggre_key,group))
         db.commit()
         db.close()
         return "Share Added"

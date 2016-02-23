@@ -48,6 +48,8 @@ def check_login():
             <body align="center">
              <div class="wrapper">"""
         return header
+
+
 class NamedPart(cherrypy._cpreqbody.Part):
 
     def make_file(self):
@@ -224,8 +226,6 @@ class Root:
         group = cherrypy.session['group']
         html = check_login()
         aggre_keys = encrypt_handler.get_aggre_key(group)
-        print aggre_keys
-        #out = db_handler.file_share(user,file_name,key,group)
         html += """ <h2> File : %s </h2>""" % file_name
         html += """ Select the Group you wanna share the file with <br>
          <form method="post" action=/share_file >
@@ -245,24 +245,16 @@ class Root:
         user = cherrypy.session['cur_user']
         uemail = [db_handler.fetch_member_email(group)]
         keys = encrypt_handler.get_aggre_key(group)
-        u = {}
-        i= int()
-        for k in keys.values() , u in uemail, i in range(0, len(keys.values())):
-           out = db_handler.file_share(u.keys(),file_name,k[i],group)
-        skey = keys.keys()
+        for i,j in zip(range(0,len(uemail[0].keys())),range(1,len(keys))):
+           out = db_handler.file_share(uemail[0].keys()[i],file_name,keys[j],group)
+        skey = keys[0]
         msg = " %s shared %s with you! key = %s " % (user,file_name,skey)
-        for u in uemail:
-           try:
-            if u.keys() in user:
-                pass
-            else:
+        if out != "Share Exists!":
+         for u in uemail:
                 send_mail.send_email(u.values(),msg)
-                html += """ File Shared \n Result : %s """ % out
-           except:
-               html += """ File Sharing Failed \n Result : %s """ % out
-        u={}
-        i=int()
-        keys={}
+                html += """ File Shared, \nResult : %s """ % out
+        else:
+                html += """ File Sharing Failed, \nResult : %s """ % out
         html += footer
         return html
 
