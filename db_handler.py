@@ -133,15 +133,16 @@ def fetch_member_email(group):
     else:
         return "No users Found!"
 
-def file_download(user,file):
+def file_download(user,file,group=None,):
     db = connect_logic()
     cur = db.cursor()
     cur.execute('create table if not exists file_upload(user varchar(255),file varchar(255))')
-    out = cur.execute('select * from file_upload where file = "%s" and user = "%s" ' % (file,user))
-    if out == 0L:
-        return False
+    if cur.execute('select * from file_upload where file = "%s" and user = "%s" ' % (file,user)) != 0L:
+        return 0
+    elif cur.execute('select * from file_share where user = "%s" and file = "%s" and group_ = %s' % (user,file,group)) != 0L:
+        return 1
     else:
-        return True
+        return 2
 
 def file_share(users,file,aggre_key,group):
     db = connect_logic()

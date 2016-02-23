@@ -186,17 +186,20 @@ class Root:
     @require()
     def index_download(self, filepath):
         user = cherrypy.session['cur_user']
+        group = cherrypy.session['group']
         file = os.path.basename(filepath)
         html = check_login()
-        response = db_handler.file_download(user,file)
-        if response:
+        response = db_handler.file_download(user,file,group)
+        if response == 0:
           html += """<h2> What do you wanna do with the file?</h2> <br>
           <h3> %s </h3><br> Response : %s
           <table><tr><td><a href=/download_file?filepath=%s>Download</a></td>
           <tr><td><a href=/delete_file?file=%s>Delete</a></td></tr>
           <tr><td><a href=/share?file=%s>Share</a></td><tr>
           <br>""" % (file,response,filepath,filepath,filepath)
-        else:
+        elif response == 1:
+            html += """ This file was Shared with You! %s """ % response
+        elif response == 2:
             html += """ <h2> You are not the uploader!. <br> Hence, you are <b>not</b> authorized to do anything with the file! Sorry :( <br> Response = %s """ % response
         html += footer
         return html

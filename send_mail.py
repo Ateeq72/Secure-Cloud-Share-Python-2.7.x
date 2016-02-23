@@ -3,7 +3,7 @@ import smtplib
 def send_email(recipient,body):
 
     gmail_user = 'ateeq.at.aristocrat@gmail.com'
-    gmail_pwd = 'Communication201'
+    gmail_pwd = 'Communication20'
     FROM = gmail_user
     TO = recipient if type(recipient) is list else [recipient]
     SUBJECT = 'File Shared!'
