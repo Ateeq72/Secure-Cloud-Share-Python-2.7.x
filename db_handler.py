@@ -161,6 +161,9 @@ def file_share_download(user,file,aggre_key,group):
     cur = db.cursor()
     cur.execute('create table if not exists file_share(user varchar(255),file varchar(255),aggre_key varchar(350),group_ varchar(255))')
     if cur.execute('select * from file_share where user = "%s" and file = "%s" and aggre_key = "%s" and group_ = %s' % (user,file,aggre_key,group)) != 0L :
+        cur.execute('delete from file_share where user = "%s" and file = "%s" and aggre_key = "%s" and group_ = %s' % (user,file,aggre_key,group))
+        db.commit()
+        db.close()
         return True
     else:
         return False

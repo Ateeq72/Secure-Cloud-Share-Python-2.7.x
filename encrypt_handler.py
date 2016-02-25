@@ -18,7 +18,14 @@ def get_aggre_key(group):
 
 def get_d_aggre_key(user,rstring,group):
     enc_group = for_encrypt_pass(group)
-    return user+rstring+enc_group
+    u = ''.join(user)
+    out = []
+    out.append(u)
+    out.append(rstring)
+    out.append(enc_group)
+    a = ''.join(out)
+    a = a.replace(' ','')
+    return a
 
 
 

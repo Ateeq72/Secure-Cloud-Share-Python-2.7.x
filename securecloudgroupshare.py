@@ -72,7 +72,8 @@ class Root:
     def upload_view(self):
         html = check_login()
         html += """      
-            <h2>Upload a file</h2>
+            <h2>Upload a file</h2><br>
+            <h3>Make sure the path or file doesn't have any space <br> If so replace with a '-' or '_'</h3>
             <form action='/upload_file' method='post' enctype='multipart/form-data'>
             File: <input type='file' name='videoFile'/> <br/>
             <input type='submit' value='Upload'/>
@@ -198,11 +199,36 @@ class Root:
           <tr><td><a href=/share?file=%s>Share</a></td><tr>
           <br>""" % (file,response,filepath,filepath,filepath)
         elif response == 1:
-            html += """ This file was Shared with You! %s """ % response
+            html += """ <h2>This file was Shared with You.</h2> <br>
+            <form method="post" action="ver_download">
+            <input type="hidden" value=" """ +user+ """ " name="user"/>
+            <input type="hidden" value=" """ +group+ """ "name="group"/>
+            <input type="hidden" value=" """ +filepath+ """ "name="filepath"/>
+            Key : <input type="text" name="rstring"><br>
+            <input type="submit" value="Download">
+            </form>
+             """
         elif response == 2:
             html += """ <h2> You are not the uploader!. <br> Hence, you are <b>not</b> authorized to do anything with the file! Sorry :( <br> Response = %s """ % response
         html += footer
         return html
+
+    @cherrypy.expose
+    @require()
+    def ver_download(self,user,rstring,group,filepath):
+        html = check_login()
+        file = os.path.basename(filepath)
+        aggre_key = encrypt_handler.get_d_aggre_key(user,rstring,group)
+        user = user.replace(' ','')
+        file = file.replace(' ','')
+        group = group.replace(' ','')
+        if db_handler.file_share_download(user,file,aggre_key,group):
+            raise cherrypy.HTTPRedirect("/download_file?filepath=%s" % filepath)
+        else:
+            html += "<h2> Key not Valid!</h2> "
+        html += footer
+        return html
+
 
     @cherrypy.expose
     @require()
@@ -251,6 +277,7 @@ class Root:
         for i,j in zip(range(0,len(uemail[0].keys())),range(1,len(keys))):
            out = db_handler.file_share(uemail[0].keys()[i],file_name,keys[j],group)
         skey = keys[0]
+        print "rstring share file : %s" % skey
         msg = " %s shared %s with you! key = %s " % (user,file_name,skey)
         if out != "Share Exists!":
          for u in uemail:
@@ -265,6 +292,7 @@ class Root:
     @cherrypy.expose
     @require()
     def download_file(self,filepath):
+        filepath = filepath.replace(' ','')
         return serve_file(filepath, "application/x-download", "attachment")  
     
 tutconf = os.path.join(os.path.dirname(__file__), 'tutorial.conf')
