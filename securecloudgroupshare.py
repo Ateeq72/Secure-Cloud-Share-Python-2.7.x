@@ -73,7 +73,6 @@ class Root:
         html = check_login()
         html += """      
             <h2>Upload a file</h2><br>
-            <h3>Make sure the path or file doesn't have any space <br> If so replace with a '-' or '_'</h3>
             <form action='/upload_file' method='post' enctype='multipart/form-data'>
             File: <input type='file' name='videoFile'/> <br/>
             <input type='submit' value='Upload'/>
@@ -118,7 +117,7 @@ class Root:
         Age : <input type="number" name="age" required="required"/><br>
         Group : <select name="group">   """
         for x in range(1,groups+1):
-            page += """ <option value=" """ + str(x) + """" >""" + str(x) + """ </option>"""
+            page += """ <option value=" """ + str(x) + """ " >""" + str(x) + """ </option>"""
         page +="""</select><br>
         <input type="hidden" value="add" name="action"/>
         <input type="submit" value="Register">
@@ -223,7 +222,8 @@ class Root:
         file = file.replace(' ','')
         group = group.replace(' ','')
         if db_handler.file_share_download(user,file,aggre_key,group):
-            raise cherrypy.HTTPRedirect("/download_file?filepath=%s" % filepath)
+            #raise cherrypy.HTTPRedirect("/download_file?filepath=%s" % filepath)
+            self.download_file(filepath)
         else:
             html += "<h2> Key not Valid!</h2> "
         html += footer
@@ -289,10 +289,9 @@ class Root:
         return html
 
 
-    @cherrypy.expose
     @require()
-    def download_file(self,filepath):
-        filepath = filepath.replace(' ','')
+    def download_file(filepath):
+        filepath = filepath.strip()
         return serve_file(filepath, "application/x-download", "attachment")  
     
 tutconf = os.path.join(os.path.dirname(__file__), 'tutorial.conf')
