@@ -131,7 +131,7 @@ def fetch_member_email(group):
     if cur.execute('select user,email from registered_user where group_ = %s ' % (group)) != 0L:
         return dict(cur.fetchall())
     else:
-        return "No users Found!"
+        return None
 
 def file_download(user,file,group=None,):
     db = connect_logic()

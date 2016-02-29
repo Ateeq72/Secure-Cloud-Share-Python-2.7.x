@@ -273,24 +273,28 @@ class Root:
         file_name = os.path.basename(file)
         user = cherrypy.session['cur_user']
         uemail = [db_handler.fetch_member_email(group)]
-        keys = encrypt_handler.get_aggre_key(group)
-        for i,j in zip(range(0,len(uemail[0].keys())),range(1,len(keys))):
-           out = db_handler.file_share(uemail[0].keys()[i],file_name,keys[j],group)
-        skey = keys[0]
-        print "rstring share file : %s" % skey
-        msg = " %s shared %s with you! key = %s " % (user,file_name,skey)
-        if out != "Share Exists!":
-         for u in uemail:
-                send_mail.send_email(u.values(),msg)
-                html += """ File Shared, \nResult : %s """ % out
+        print uemail
+        if uemail == [None]:
+            html += "No users in Group!"
         else:
-                html += """ File Sharing Failed, \nResult : %s """ % out
+            keys = encrypt_handler.get_aggre_key(group)
+            for i,j in zip(range(0,len(uemail[0].keys())),range(1,len(keys))):
+                out = db_handler.file_share(uemail[0].keys()[i],file_name,keys[j],group)
+            skey = keys[0]
+            print "rstring share file : %s" % skey
+            msg = " %s shared %s with you! key = %s " % (user,file_name,skey)
+            if out != "Share Exists!":
+               for u in uemail:
+                  send_mail.send_email(u.values(),msg)
+                  html += """ File Shared, \nResult : %s """ % out
+            else:
+               html += """ File Sharing Failed, \nResult : %s """ % out
         html += footer
         return html
 
-
+    @cherrypy.expose
     @require()
-    def download_file(filepath):
+    def download_file(self,filepath):
         filepath = filepath.strip()
         return serve_file(filepath, "application/x-download", "attachment")  
     
