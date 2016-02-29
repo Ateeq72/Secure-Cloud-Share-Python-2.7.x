@@ -126,13 +126,15 @@ class AuthController(object):
         """Called on successful login"""
         cherrypy.session['cur_user'] = username
         cherrypy.session['group'] = group
+        cherrypy.session['file'] = ""
 
-    
+
     def on_logout(self, username):
         """Called on logout"""
         cherrypy.session['cur_user'] = ""
         cherrypy.session['group'] = ""
-    
+        cherrypy.session['file'] = ""
+
     def get_loginform(self, username, msg="Enter login information", from_page="/"):
         html = header
         html += """<html><body>

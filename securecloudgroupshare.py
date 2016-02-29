@@ -191,18 +191,19 @@ class Root:
         html = check_login()
         response = db_handler.file_download(user,file,group)
         if response == 0:
+          cherrypy.session['file'] = filepath
           html += """<h2> What do you wanna do with the file?</h2> <br>
           <h3> %s </h3><br> Response : %s
-          <table><tr><td><a href=/download_file?filepath=%s>Download</a></td>
+          <table><tr><td><a href=/df_temp?do=%s>Download</a></td>
           <tr><td><a href=/delete_file?file=%s>Delete</a></td></tr>
           <tr><td><a href=/share?file=%s>Share</a></td><tr>
-          <br>""" % (file,response,filepath,filepath,filepath)
+          <br>""" % (file,response,str(2730),filepath,filepath)
         elif response == 1:
+            cherrypy.session['file'] = filepath
             html += """ <h2>This file was Shared with You.</h2> <br>
             <form method="post" action="ver_download">
             <input type="hidden" value=" """ +user+ """ " name="user"/>
             <input type="hidden" value=" """ +group+ """ "name="group"/>
-            <input type="hidden" value=" """ +filepath+ """ "name="filepath"/>
             Key : <input type="text" name="rstring"><br>
             <input type="submit" value="Download">
             </form>
@@ -214,7 +215,9 @@ class Root:
 
     @cherrypy.expose
     @require()
-    def ver_download(self,user,rstring,group,filepath):
+    def ver_download(self,user,rstring,group):
+        filepath = cherrypy.session['file']
+        cherrypy.session['file'] = ""
         html = check_login()
         file = os.path.basename(filepath)
         aggre_key = encrypt_handler.get_d_aggre_key(user,rstring,group)
@@ -223,7 +226,8 @@ class Root:
         group = group.replace(' ','')
         if db_handler.file_share_download(user,file,aggre_key,group):
             #raise cherrypy.HTTPRedirect("/download_file?filepath=%s" % filepath)
-            self.download_file(filepath)
+            #self.download_file(filepath)
+            return self.download_file(filepath)
         else:
             html += "<h2> Key not Valid!</h2> "
         html += footer
@@ -273,7 +277,6 @@ class Root:
         file_name = os.path.basename(file)
         user = cherrypy.session['cur_user']
         uemail = [db_handler.fetch_member_email(group)]
-        print uemail
         if uemail == [None]:
             html += "No users in Group!"
         else:
@@ -294,9 +297,21 @@ class Root:
 
     @cherrypy.expose
     @require()
+    def df_temp(self,do):
+        if do == str(2730):
+            filepath = cherrypy.session['file']
+            cherrypy.session['file'] = ""
+            return self.download_file(filepath)
+        else:
+            return "Not Authorized!"
+
+    @require()
     def download_file(self,filepath):
         filepath = filepath.strip()
-        return serve_file(filepath, "application/x-download", "attachment")  
+        if filepath != "":
+          return serve_file(filepath, "application/x-download", "attachment")
+        else:
+          return "No file Path Found! \nProbably used or Removed!"
     
 tutconf = os.path.join(os.path.dirname(__file__), 'tutorial.conf')
 if __name__ == '__main__':
