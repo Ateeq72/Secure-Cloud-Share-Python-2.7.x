@@ -2,7 +2,7 @@ import MySQLdb as mysqldb
 import encrypt_handler
 
 def connect_logic():     
-    return mysqldb.connect("localhost","root","","securecloud") 
+    return mysqldb.connect("localhost","root","","securecloud",unix_socket="/opt/lampp/var/mysql/mysql.sock") 
     
 def add_user(username,password):
     db = connect_logic()

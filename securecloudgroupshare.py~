@@ -167,7 +167,7 @@ class Root:
        assert isinstance(videoFile, cherrypy._cpreqbody.Part)
        user = cherrypy.session['cur_user']
        file = videoFile.filename
-       destination = os.path.join('/home/ateeq/Documents/SecureCloud/Secure-Cloud-Share-Python-2.7.x/static/download/', videoFile.filename)
+       destination = os.path.join('/home/aristocrat/NetBeansProjects/SecureCloudGroupShare/static/download/', videoFile.filename)
        try:
 
        # Note that original link will be deleted by tempfile.NamedTemporaryFile
